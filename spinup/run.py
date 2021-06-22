@@ -153,7 +153,9 @@ def parse_and_execute_grid_search(cmd, args):
 
     # Special handling for environment: make sure that env_name is a real,
     # registered gym environment.
-    valid_envs = [e.id for e in list(gym.envs.registry.all())]
+    original_envs = [e.id for e in list(gym.envs.registry.all())]
+    custom_envs = ['level-v0', 'fodup-v0']
+    valid_envs = original_envs + custom_envs
     assert 'env_name' in arg_dict, \
         friendly_err("You did not give a value for --env_name! Add one and try again.")
     for env_name in arg_dict['env_name']:
@@ -172,7 +174,13 @@ def parse_and_execute_grid_search(cmd, args):
             """%env_name)
         assert env_name in valid_envs, err_msg
 
+    if arg_dict['env_name'][0] in custom_envs:
+        env_name = arg_dict.pop('env_name')[0]
 
+        def env_fn():
+            return gym.make(f'gym_level:{env_name}')
+
+        arg_dict['env_fn'] = env_fn
     # Construct and execute the experiment grid.
     eg = ExperimentGrid(name=exp_name)
     for k,v in arg_dict.items():
